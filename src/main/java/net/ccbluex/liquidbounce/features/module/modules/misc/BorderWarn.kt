@@ -28,7 +28,7 @@ class BorderWarn : Module() {
 
         val playerDistance = world.worldBorder.getClosestDistance(player)
 
-        if (playerDistance <= 25) {
+        if (playerDistance <= rangeValue.get()) {
             if (timer.hasTimePassed(1000L)) {
                 timer.reset()
 
