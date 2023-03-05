@@ -28,7 +28,7 @@ import kotlin.math.sqrt
 
 @ModuleInfo(name = "NoSlow", category = ModuleCategory.MOVEMENT)
 class NoSlow : Module() {
-    private val modeValue = ListValue("PacketMode", arrayOf("Vanilla", "LiquidBounce", "Custom", "WatchDog", "Watchdog2", "NCP", "AAC", "AAC5", "Matrix", "Vulcan"), "Vanilla")
+    private val modeValue = ListValue("PacketMode", arrayOf("Vanilla", "LiquidBounce", "Custom", "WatchDog", "Watchdog2", "NCP", "AAC", "AAC5", "Matrix", "Vulcan", "GrimAC"), "Vanilla")
     private val blockForwardMultiplier = FloatValue("BlockForwardMultiplier", 1.0F, 0.2F, 1.0F)
     private val blockStrafeMultiplier = FloatValue("BlockStrafeMultiplier", 1.0F, 0.2F, 1.0F)
     private val consumeForwardMultiplier = FloatValue("ConsumeForwardMultiplier", 1.0F, 0.2F, 1.0F)
@@ -189,11 +189,16 @@ class NoSlow : Module() {
 
     @EventTarget
     fun onUpdate(event: UpdateEvent) {
-        if((modeValue.equals("Matrix") || modeValue.equals("Vulcan")) && (lastBlockingStat || isBlocking)) {
+        if((modeValue.equals("Matrix") || modeValue.equals("Vulcan") || modeValue.equals("GrimAC")) && (lastBlockingStat || isBlocking)) {
             if(msTimer.hasTimePassed(230) && nextTemp) {
                 nextTemp = false
-                PacketUtils.sendPacketNoEvent(C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos(-1, -1, -1), EnumFacing.DOWN))
-                if(packetBuf.isNotEmpty()) {
+                if(modeValue.equals("GrimAC")) {
+                    PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange((mc.thePlayer.inventory.currentItem + 1) % 9))
+                    PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
+                } else {
+                    PacketUtils.sendPacketNoEvent(C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos(-1, -1, -1), EnumFacing.DOWN))
+                }
+                if (packetBuf.isNotEmpty()) {
                     var canAttack = false
                     for(packet in packetBuf) {
                         if(packet is C03PacketPlayer) {
@@ -206,7 +211,7 @@ class NoSlow : Module() {
                     packetBuf.clear()
                 }
             }
-            if(!nextTemp) {
+            if (!nextTemp) {
                 lastBlockingStat = isBlocking
                 if (!isBlocking) {
                     return
@@ -226,10 +231,10 @@ class NoSlow : Module() {
     fun onPacket(event: PacketEvent) {
         val packet = event.packet
 
-        if((modeValue.equals("Matrix") || modeValue.equals("Vulcan")) && nextTemp) {
-            if((packet is C07PacketPlayerDigging || packet is C08PacketPlayerBlockPlacement) && isBlocking) {
+        if((modeValue.equals("Matrix") || modeValue.equals("Vulcan") || modeValue.equals("GrimAC")) && nextTemp) {
+            if ((packet is C07PacketPlayerDigging || packet is C08PacketPlayerBlockPlacement) && isBlocking) {
                 event.cancelEvent()
-            }else if (packet is C03PacketPlayer || packet is C0APacketAnimation || packet is C0BPacketEntityAction || packet is C02PacketUseEntity || packet is C07PacketPlayerDigging || packet is C08PacketPlayerBlockPlacement) {
+            } else if (packet is C03PacketPlayer || packet is C0APacketAnimation || packet is C0BPacketEntityAction || packet is C02PacketUseEntity || packet is C07PacketPlayerDigging || packet is C08PacketPlayerBlockPlacement) {
                 if (modeValue.equals("Vulcan") && waitC03 && packet is C03PacketPlayer) {
                     waitC03 = false
                     return
