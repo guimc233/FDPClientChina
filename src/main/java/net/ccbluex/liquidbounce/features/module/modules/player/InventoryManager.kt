@@ -65,6 +65,8 @@ class InventoryManager : Module() {
     private val armorValue = BoolValue("Armor", true)
     private val noCombatValue = BoolValue("NoCombat", false)
     private val itemDelayValue = IntegerValue("ItemDelay", 0, 0, 5000)
+    private val onlySwordDamage = BoolValue("OnlySwordWeapon", true)
+    private val swingValue = BoolValue("Swing", true)
     private val nbtGoalValue = ListValue("NBTGoal", ItemUtils.EnumNBTPriorityType.values().map { it.toString() }.toTypedArray(), "NONE")
     private val nbtItemNotGarbage = BoolValue("NBTItemNotGarbage", true).displayable { !nbtGoalValue.equals("NONE") }
     private val nbtArmorPriority = FloatValue("NBTArmorPriority", 0f, 0f, 5f).displayable { !nbtGoalValue.equals("NONE") }
@@ -174,7 +176,7 @@ class InventoryManager : Module() {
         }
 
         if (throwValue.get()) {
-            val garbageItems = items(9, if (hotbarValue.get()) 45 else 36)
+            val garbageItems = items(5, if (hotbarValue.get()) 45 else 36)
                 .filter { !isUseful(it.value, it.key) }
                 .keys
 
@@ -194,7 +196,10 @@ class InventoryManager : Module() {
                     return
                 }
 
-                mc.playerController.windowClick(mc.thePlayer.openContainer.windowId, garbageItem, 4, 4, mc.thePlayer)
+                if(swingValue.get()) mc.thePlayer.swingItem()
+
+                mc.playerController.windowClick(mc.thePlayer.openContainer.windowId, garbageItem, 0, 0, mc.thePlayer)
+                mc.playerController.windowClick(mc.thePlayer.openContainer.windowId, -999, 0, 0, mc.thePlayer)
 
                 delay = TimeUtils.randomDelay(minDelayValue.get(), maxDelayValue.get())
 
@@ -217,37 +222,40 @@ class InventoryManager : Module() {
         return try {
             val item = itemStack.item
 
-            if (item is ItemSword || item is ItemTool) {
-                if (slot >= 36 && findBetterItem(slot - 36, mc.thePlayer.inventory.getStackInSlot(slot - 36)) == slot - 36) {
-                    return true
-                }
-
-                for (i in 0..8) {
-                    if (type(i).equals("sword", true) && item is ItemSword ||
-                        type(i).equals("pickaxe", true) && item is ItemPickaxe ||
-                        type(i).equals("axe", true) && item is ItemAxe) {
-                        if (findBetterItem(i, mc.thePlayer.inventory.getStackInSlot(i)) == null) {
-                            return true
-                        }
-                    }
-                }
+            if (item is ItemSword || (item is ItemTool && !onlySwordDamage.get())) {
 
                 val damage = (itemStack.attributeModifiers["generic.attackDamage"].firstOrNull()?.amount ?: 0.0) + ItemUtils.getWeaponEnchantFactor(itemStack, nbtWeaponPriority.get(), goal)
 
                 items(0, 45).none { (_, stack) ->
-                    stack != itemStack && stack.javaClass == itemStack.javaClass && damage <= (stack.attributeModifiers["generic.attackDamage"].firstOrNull()?.amount ?: 0.0) + ItemUtils.getWeaponEnchantFactor(stack, nbtWeaponPriority.get(), goal)
+                    if (stack != itemStack && stack.javaClass == itemStack.javaClass) {
+                        val dmg = (stack.attributeModifiers["generic.attackDamage"].firstOrNull()?.amount ?: 0.0) + ItemUtils.getWeaponEnchantFactor(stack, nbtWeaponPriority.get(), goal)
+                        if (damage == dmg) {
+                            val currDamage = item.getDamage(itemStack)
+                            currDamage >= stack.item.getDamage(stack)
+                        } else damage < dmg
+                    } else {false}
                 }
             } else if (item is ItemBow) {
                 val currPower = ItemUtils.getEnchantment(itemStack, Enchantment.power)
 
-                items().none { (_, stack) ->
+                /*items().none { (_, stack) ->
                     itemStack != stack && stack.item is ItemBow &&
                             currPower <= ItemUtils.getEnchantment(stack, Enchantment.power)
+                }*/
+                items().none { (_, stack) ->
+                    if (itemStack != stack && stack.item is ItemBow) {
+                        val power = ItemUtils.getEnchantment(stack, Enchantment.power)
+
+                        if (currPower == power) {
+                            val currDamage = item.getDamage(itemStack)
+                            currDamage >= stack.item.getDamage(stack)
+                        } else currPower < power
+                    } else {false}
                 }
             } else if (item is ItemArmor) {
                 val currArmor = ArmorPiece(itemStack, slot)
 
-                items().none { (slot, stack) ->
+                /*items().none { (slot, stack) ->
                     if (stack != itemStack && stack.item is ItemArmor) {
                         val armor = ArmorPiece(stack, slot)
 
@@ -259,6 +267,25 @@ class InventoryManager : Module() {
                     } else {
                         false
                     }
+                }*/
+                items().none { (slot, stack) ->
+                    if (stack != itemStack && stack.item is ItemArmor) {
+                        val armor = ArmorPiece(stack, slot)
+
+                        if (armor.armorType != currArmor.armorType) {false}
+                        else {
+                            val currDamage = item.getDamage(itemStack)
+                            val result = ItemUtils.compareArmor(currArmor, armor, nbtArmorPriority.get(), goal)
+                            if (result == 0)
+                                currDamage >= stack.item.getDamage(stack)
+                            else result < 0
+                        }
+                    } else {false}
+                }
+            } else if (item is ItemFlintAndSteel) {
+                val currDamage = item.getDamage(itemStack)
+                items().none { (_, stack) ->
+                    itemStack != stack && stack.item is ItemFlintAndSteel && currDamage >= stack.item.getDamage(stack)
                 }
             } else if (itemStack.unlocalizedName == "item.compass") {
                 items(0, 45).none { (_, stack) -> itemStack != stack && stack.unlocalizedName == "item.compass" }
@@ -270,7 +297,7 @@ class InventoryManager : Module() {
                         item is ItemEnderPearl || item is ItemBucket || ignoreVehiclesValue.get() && (item is ItemBoat || item is ItemMinecart)
             }
         } catch (ex: Exception) {
-            ClientUtils.logError("(InventoryManager) Failed to check item: ${itemStack.unlocalizedName}.", ex)
+            ClientUtils.logError("(InvManager) Failed to check item: ${itemStack.unlocalizedName}.", ex)
             true
         }
     }
@@ -312,7 +339,7 @@ class InventoryManager : Module() {
                 }
 
                 mc.thePlayer.inventory.mainInventory.forEachIndexed { index, itemStack ->
-                    if (itemStack?.item?.javaClass == currentType && !type(index).equals(type, ignoreCase = true)) {
+                    if (itemStack?.item?.javaClass == currentType && !type(index).equals(type, ignoreCase = true) && (!onlySwordDamage.get() || type.equals("Sword", ignoreCase = true)) ) {
                         if (bestWeapon == -1) {
                             bestWeapon = index
                         } else {
