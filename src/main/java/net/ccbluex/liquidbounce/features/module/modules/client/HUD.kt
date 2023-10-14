@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.features.module.modules.client
 
+import net.ccbluex.liquidbounce.utils.RenderUtil
 import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.event.*
 import net.ccbluex.liquidbounce.features.module.Module
@@ -17,6 +18,7 @@ import net.ccbluex.liquidbounce.features.module.modules.client.button.RoundedBut
 import net.ccbluex.liquidbounce.ui.client.hud.designer.GuiHudDesigner
 import net.ccbluex.liquidbounce.utils.render.Animation
 import net.ccbluex.liquidbounce.utils.render.EaseUtils
+import net.ccbluex.liquidbounce.utils.render.RenderUtils
 import net.ccbluex.liquidbounce.value.BoolValue
 import net.ccbluex.liquidbounce.value.FloatValue
 import net.ccbluex.liquidbounce.value.IntegerValue
@@ -31,6 +33,7 @@ object HUD : Module() {
     val betterHotbarValue = BoolValue("BetterHotbar", true)
     val HotbarBlur = BoolValue("HotbarBlur", true)
     val HotbarRect = BoolValue("HotbarRect", true)
+    val MusicDisplay = BoolValue("MusicDisplay", true)
     //val hotbarAlphaValue = IntegerValue("HotbarAlpha", 70, 0, 255).displayable { betterHotbarValue.get() }
     val hotbarEaseValue = BoolValue("HotbarEase", true)
     private val hotbarAnimSpeedValue = IntegerValue("HotbarAnimSpeed", 10, 5, 20).displayable { hotbarEaseValue.get() }
@@ -41,6 +44,12 @@ object HUD : Module() {
     val inventoryParticle = BoolValue("InventoryParticle", false)
     val blurValue = BoolValue("Blur", false)
     val shadowValue = BoolValue("Shadow", false)
+    val redValue = IntegerValue("Red", 255, 0, 255)
+    val greenValue = IntegerValue("Green", 255, 0, 255)
+    val blueValue = IntegerValue("Blue", 255, 0, 255)
+    val gredValue = IntegerValue("GradientRed", 255, 0, 255)
+    val ggreenValue = IntegerValue("GradientGreen", 255, 0, 255)
+    val gblueValue = IntegerValue("GradientBlue", 255, 0, 255)
     val fontChatValue = BoolValue("FontChat", false)
     val chatRectValue = BoolValue("ChatRect", true)
     val chatCombineValue = BoolValue("ChatCombine", true)
@@ -94,10 +103,13 @@ object HUD : Module() {
     @EventTarget
     fun onUpdate(event: UpdateEvent) {
         LiquidBounce.hud.update()
+        RenderUtil.delta = RenderUtils.deltaTime.toFloat()
         if (mc.currentScreen == null && lastFontEpsilon != fontEpsilonValue.get()) {
             lastFontEpsilon = fontEpsilonValue.get()
             alert("You need to reload FDPClient to apply changes!")
         }
+
+
         //if (betterHotbarValue.get()){
         //GL11.glPushMatrix()
 

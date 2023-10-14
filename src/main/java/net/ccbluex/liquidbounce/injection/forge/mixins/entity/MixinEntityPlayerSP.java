@@ -7,13 +7,13 @@ package net.ccbluex.liquidbounce.injection.forge.mixins.entity;
 
 import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.event.*;
-import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura;
 import net.ccbluex.liquidbounce.features.module.modules.combat.Criticals;
+import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura;
+import net.ccbluex.liquidbounce.features.module.modules.exploit.AntiDesync;
+import net.ccbluex.liquidbounce.features.module.modules.movement.Fly;
 import net.ccbluex.liquidbounce.features.module.modules.movement.InventoryMove;
 import net.ccbluex.liquidbounce.features.module.modules.movement.NoSlow;
 import net.ccbluex.liquidbounce.features.module.modules.movement.Sprint;
-import net.ccbluex.liquidbounce.features.module.modules.movement.Fly;
-import net.ccbluex.liquidbounce.features.module.modules.exploit.AntiDesync;
 import net.ccbluex.liquidbounce.features.module.modules.world.Scaffold;
 import net.ccbluex.liquidbounce.utils.Rotation;
 import net.ccbluex.liquidbounce.utils.RotationUtils;
@@ -397,15 +397,15 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
 
     @Override
     public void moveEntity(double x, double y, double z) {
-        MoveEvent moveEvent = new MoveEvent(x, y, z);
-        LiquidBounce.eventManager.callEvent(moveEvent);
+        MovementEvent movementEvent = new MovementEvent(x, y, z);
+        LiquidBounce.eventManager.callEvent(movementEvent);
 
-        if (moveEvent.isCancelled())
+        if (movementEvent.isCancelled())
             return;
 
-        x = moveEvent.getX();
-        y = moveEvent.getY();
-        z = moveEvent.getZ();
+        x = movementEvent.getX();
+        y = movementEvent.getY();
+        z = movementEvent.getZ();
 
         if (this.noClip) {
             this.setEntityBoundingBox(this.getEntityBoundingBox().offset(x, y, z));
@@ -433,7 +433,7 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
             double d5 = z;
             boolean flag = this.onGround && this.isSneaking();
 
-            if (flag || moveEvent.isSafeWalk()) {
+            if (flag || movementEvent.isSafeWalk()) {
                 double d6;
 
                 for (d6 = 0.05D; x != 0.0D && this.worldObj.getCollidingBoundingBoxes((Entity) (Object) this, this.getEntityBoundingBox().offset(x, -1.0D, 0.0D)).isEmpty(); d3 = x) {

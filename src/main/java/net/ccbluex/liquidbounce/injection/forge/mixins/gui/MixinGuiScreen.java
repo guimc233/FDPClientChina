@@ -5,12 +5,13 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.gui;
 
-import com.guimc.fuckpcl.utils.WindowUtils;
 import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.features.module.modules.client.HUD;
+import net.ccbluex.liquidbounce.features.module.modules.client.PerformanceLevel;
 import net.ccbluex.liquidbounce.features.special.GradientBackground;
 import net.ccbluex.liquidbounce.font.FontLoaders;
 import net.ccbluex.liquidbounce.ui.client.GuiBackground;
+import net.ccbluex.liquidbounce.ui.client.GuiSelectPerformance;
 import net.ccbluex.liquidbounce.utils.NotiUtils;
 import net.ccbluex.liquidbounce.utils.render.BlurUtils;
 import net.ccbluex.liquidbounce.utils.render.ParticleUtils;
@@ -24,13 +25,10 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.settings.GameSettings;
-import net.minecraft.crash.CrashReport;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
 import net.minecraft.util.ChatStyle;
 import net.minecraft.util.IChatComponent;
-import net.minecraft.util.Util;
-import org.lwjgl.Sys;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
@@ -41,11 +39,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
@@ -106,7 +100,7 @@ public abstract class MixinGuiScreen {
         try {
             if (mc.thePlayer != null) {
                 callbackInfo.cancel();
-                if (HUD.INSTANCE.getBlurValue().get())
+                if (HUD.INSTANCE.getBlurValue().get() && !GuiSelectPerformance.offblur)
                     BlurUtils.INSTANCE.draw(0, 0, this.width, this.height, 50);
                 int defaultHeight1 = (this.height);
                 int defaultWidth1 = (this.width);
@@ -191,7 +185,7 @@ public abstract class MixinGuiScreen {
 
     @Inject(method = "initGui", at = @At("RETURN"))
     private void initGui(CallbackInfo callbackInfo) {
-        try {
+        /*try {
             Field fastRender = GameSettings.class.getDeclaredField("ofFastRender");
             if(fastRender.getBoolean((Object) Minecraft.getMinecraft().gameSettings)){
                 try {
@@ -227,7 +221,7 @@ public abstract class MixinGuiScreen {
             }
         } catch (Exception var1) {
             var1.printStackTrace();
-        }
+        }*/
     }
 
     @ModifyVariable(method = "sendChatMessage(Ljava/lang/String;)V", at = @At("HEAD"))
@@ -259,7 +253,7 @@ public abstract class MixinGuiScreen {
                 mc.getTextureManager().bindTexture(LiquidBounce.INSTANCE.getBackground());
                 Gui.drawModalRectWithCustomSizedTexture(0, 0, 0f, 0f, width, height, width, height);
             }
-            if (GuiBackground.Companion.getBlur()) {
+            if (GuiBackground.Companion.getBlur() && !GuiSelectPerformance.offblur) {
                 BlurUtils.INSTANCE.draw(0, 0, mc.displayWidth, mc.displayHeight, 50);
             }
             GlStateManager.resetColor();

@@ -2,11 +2,12 @@ package net.ccbluex.liquidbounce.features.module.modules.movement.flys.verus
 
 import net.ccbluex.liquidbounce.event.BlockBBEvent
 import net.ccbluex.liquidbounce.event.JumpEvent
-import net.ccbluex.liquidbounce.event.MoveEvent
+import net.ccbluex.liquidbounce.event.MovementEvent
 import net.ccbluex.liquidbounce.features.module.modules.movement.flys.FlyMode
 import net.ccbluex.liquidbounce.utils.MovementUtils
 import net.ccbluex.liquidbounce.value.FloatValue
 import net.ccbluex.liquidbounce.value.IntegerValue
+import net.ccbluex.liquidbounce.value.BoolValue
 import net.minecraft.block.BlockAir
 import net.minecraft.stats.StatList
 import net.minecraft.util.AxisAlignedBB
@@ -16,14 +17,16 @@ class Verus6Fly : FlyMode("Verus6") {
     private val airSpeedValue = FloatValue("${valuePrefix}AirSpeed", 0.5f, 0f, 1f)
     private val groundSpeedValue = FloatValue("${valuePrefix}GroundSpeed", 0.42f, 0f, 1f)
     private val hopDelayValue = IntegerValue("${valuePrefix}HopDelay", 3, 0, 10)
+    private val onlyOnGround = BoolValue("${valuePrefix}OnlyEnableOnGround", true)
 
     private var waitTicks = 0
 
     override fun onEnable() {
+        if (!mc.thePlayer.onGround && onlyOnGround.get()) return
         waitTicks = 0
     }
 
-    override fun onMove(event: MoveEvent) {
+    override fun onMove(event: MovementEvent) {
         if (MovementUtils.isMoving()) {
             if (mc.thePlayer.onGround) {
                 MovementUtils.strafe(groundSpeedValue.get())

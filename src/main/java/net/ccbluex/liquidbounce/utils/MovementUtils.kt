@@ -5,10 +5,12 @@
  */
 package net.ccbluex.liquidbounce.utils
 
-import net.ccbluex.liquidbounce.event.MoveEvent
+import net.ccbluex.liquidbounce.event.MovementEvent
+import net.minecraft.entity.EntityLivingBase
 import net.minecraft.network.play.client.C03PacketPlayer.C04PacketPlayerPosition
 import net.minecraft.potion.Potion
 import net.minecraft.util.AxisAlignedBB
+import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -149,13 +151,13 @@ object MovementUtils : MinecraftInstance() {
         bps = distance * (20 * mc.timer.timerSpeed)
     }
 
-    fun setSpeed(moveEvent: MoveEvent, moveSpeed: Double, pseudoYaw: Float, pseudoStrafe: Double, pseudoForward: Double) {
+    fun setSpeed(movementEvent: MovementEvent, moveSpeed: Double, pseudoYaw: Float, pseudoStrafe: Double, pseudoForward: Double) {
         var forward = pseudoForward
         var strafe = pseudoStrafe
         var yaw = pseudoYaw
         if (forward == 0.0 && strafe == 0.0) {
-            moveEvent.z = 0.0
-            moveEvent.x = 0.0
+            movementEvent.z = 0.0
+            movementEvent.x = 0.0
         } else {
             if (forward != 0.0) {
                 if (strafe > 0.0) {
@@ -172,8 +174,8 @@ object MovementUtils : MinecraftInstance() {
             }
             val cos = Math.cos(Math.toRadians((yaw + 90.0f).toDouble()))
             val sin = Math.sin(Math.toRadians((yaw + 90.0f).toDouble()))
-            moveEvent.x = forward * moveSpeed * cos + strafe * moveSpeed * sin
-            moveEvent.z = forward * moveSpeed * sin - strafe * moveSpeed * cos
+            movementEvent.x = forward * moveSpeed * cos + strafe * moveSpeed * sin
+            movementEvent.z = forward * moveSpeed * sin - strafe * moveSpeed * cos
         }
     }
 
@@ -212,4 +214,72 @@ object MovementUtils : MinecraftInstance() {
         }
         mc.netHandler.addToSendQueue(C04PacketPlayerPosition(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ, true))
     }
+
+    fun doTargetStrafe(curTarget: EntityLivingBase, direction_: Float, radius: Float, moveEvent: MovementEvent, mathRadius: Int = 0) {
+        if(!isMoving()) return
+
+        var forward_ = 0.0
+        var strafe_ = 0.0
+        val speed_ = sqrt(moveEvent.x * moveEvent.x + moveEvent.z * moveEvent.z)
+
+        if(speed_ <= 0.0001)
+            return
+
+        var _direction = 0.0
+        if(direction_ > 0.001) {
+            _direction = 1.0
+        }else if(direction_ < -0.001) {
+            _direction = -1.0
+        }
+        var curDistance = (0.01).toFloat()
+        if (mathRadius == 1) {
+            curDistance = mc.thePlayer.getDistanceToEntity(curTarget)
+        }else if (mathRadius == 0) {
+            curDistance = sqrt((mc.thePlayer.posX - curTarget.posX) * (mc.thePlayer.posX - curTarget.posX) + (mc.thePlayer.posZ - curTarget.posZ) * (mc.thePlayer.posZ - curTarget.posZ)).toFloat()
+        }
+        if(curDistance < radius - speed_) {
+            forward_ = -1.0
+        }else if(curDistance > radius + speed_) {
+            forward_ = 1.0
+        }else {
+            forward_ = (curDistance - radius) / speed_
+        }
+        if(curDistance < radius + speed_*2 && curDistance > radius - speed_*2) {
+            strafe_ = 1.0
+        }
+        strafe_ *= _direction
+        var strafeYaw = RotationUtils.getRotationsEntity(curTarget).yaw.toDouble()
+        val covert_ = sqrt(forward_ * forward_ + strafe_ * strafe_)
+
+        forward_ /= covert_
+        strafe_ /= covert_
+        var turnAngle = Math.toDegrees(asin(strafe_))
+        if(turnAngle > 0) {
+            if(forward_ < 0)
+                turnAngle = 180F - turnAngle
+        }else {
+            if(forward_ < 0)
+                turnAngle = -180F - turnAngle
+        }
+        strafeYaw = Math.toRadians((strafeYaw + turnAngle))
+        moveEvent.x = -sin(strafeYaw) * speed_
+        moveEvent.z = cos(strafeYaw) * speed_
+        mc.thePlayer.motionX = moveEvent.x
+        mc.thePlayer.motionZ = moveEvent.z
+    }
+
+    fun getPredictionYaw(x: Double, z: Double): Float {
+        if (mc.thePlayer == null) {
+            lastX = -999999.0
+            lastZ = -999999.0
+            return 0f
+        }
+        if (lastX == -999999.0) lastX = mc.thePlayer.prevPosX
+        if (lastZ == -999999.0) lastZ = mc.thePlayer.prevPosZ
+        val returnValue = (Math.atan2(z - lastZ, x - lastX) * 180f / Math.PI).toFloat()
+        lastX = x
+        lastZ = z
+        return returnValue
+    }
+
 }

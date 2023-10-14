@@ -215,7 +215,7 @@ class Scaffold : Module() {
     private var canSameY = false
     private var lastPlaceBlock: BlockPos? = null
     private var afterPlaceC08: C08PacketPlayerBlockPlacement? = null
-    
+
     //Other
     private var doSpoof = false
 
@@ -365,7 +365,7 @@ class Scaffold : Module() {
     fun onPacket(event: PacketEvent) {
         if (mc.thePlayer == null) return
         val packet = event.packet
-        
+
         //Verus
         if (packet is C03PacketPlayer) {
             if (doSpoof) {
@@ -385,8 +385,8 @@ class Scaffold : Module() {
             packet.stack = mc.thePlayer.inventory.mainInventory[slot]
             // illegal facing checks
             packet.facingX = packet.facingX.coerceIn(-1.0000F, 1.0000F)
-			packet.facingY = packet.facingY.coerceIn(-1.0000F, 1.0000F)
-			packet.facingZ = packet.facingZ.coerceIn(-1.0000F, 1.0000F)
+            packet.facingY = packet.facingY.coerceIn(-1.0000F, 1.0000F)
+            packet.facingZ = packet.facingZ.coerceIn(-1.0000F, 1.0000F)
         }
     }
 
@@ -454,7 +454,7 @@ class Scaffold : Module() {
     private fun move() {
         when (towerModeValue.get().lowercase()) {
             "none" -> {
-                 if (mc.thePlayer.onGround) {
+                if (mc.thePlayer.onGround) {
                     fakeJump()
                     mc.thePlayer.motionY = 0.42
                 }
@@ -745,7 +745,7 @@ class Scaffold : Module() {
      * @param event
      */
     @EventTarget
-    fun onMove(event: MoveEvent) {
+    fun onMove(event: MovementEvent) {
         if (safeWalkValue.equals("off") || shouldGoDown) return
         if (safeWalkValue.equals("air") || mc.thePlayer.onGround) event.isSafeWalk = true
     }
@@ -761,7 +761,7 @@ class Scaffold : Module() {
     fun onRender2D(event: Render2DEvent) {
         if (counterDisplayValue.get()) {
             GlStateManager.pushMatrix()
-            val info = LanguageManager.getAndFormat("ui.scaffold.blocks", blocksAmount)
+            val info = "${blocksAmount} blocks"
             val slot = InventoryUtils.findAutoBlockBlock()
             val height = event.scaledResolution.scaledHeight
             val width = event.scaledResolution.scaledWidth

@@ -8,12 +8,12 @@ package net.ccbluex.liquidbounce.ui.client.hud.element.elements
 import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.font.CFontRenderer
 import net.ccbluex.liquidbounce.font.FontLoaders
+import net.ccbluex.liquidbounce.ui.client.GuiSelectPerformance
 import net.ccbluex.liquidbounce.ui.client.hud.designer.GuiHudDesigner
 import net.ccbluex.liquidbounce.ui.client.hud.element.Border
 import net.ccbluex.liquidbounce.ui.client.hud.element.Element
 import net.ccbluex.liquidbounce.ui.client.hud.element.ElementInfo
 import net.ccbluex.liquidbounce.ui.client.hud.element.Side
-import net.ccbluex.liquidbounce.ui.realpha
 import net.ccbluex.liquidbounce.utils.render.BlurUtils
 import net.ccbluex.liquidbounce.utils.render.EaseUtils
 import net.ccbluex.liquidbounce.utils.render.RenderUtils
@@ -101,7 +101,7 @@ class Notification(
      * Draw notification
      */
     fun drawNotification(index: Int, font: CFontRenderer, alpha: Int, blurRadius: Float, x: Float, y: Float, scale: Float,ContentShadow: Boolean,TitleShadow: Boolean,MotionBlur: Boolean): Boolean {
-        this.width = 100.coerceAtLeast(font.getStringWidth(content)
+        this.width = 100.coerceAtLeast(FontLoaders.C12.DisplayFontWidths(font,content)
             .coerceAtLeast(font.getStringWidth(title)) + 15)
         val realY = -(index+1) * height
         val nowTime = System.currentTimeMillis()
@@ -157,7 +157,7 @@ class Notification(
         val transX = width - (width * pct) - width
         GL11.glTranslated(transX, transY, 0.0)
         if (blurRadius != 0f) {
-            BlurUtils.draw(4 + (x + transX).toFloat() * scale, (y + transY).toFloat() * scale, (width * scale) , (height.toFloat()-5f) * scale, blurRadius)
+            if(!GuiSelectPerformance.offblur) BlurUtils.draw(4 + (x + transX).toFloat() * scale, (y + transY).toFloat() * scale, (width * scale) , (height.toFloat()-5f) * scale, blurRadius)
         }
 
         // draw notify

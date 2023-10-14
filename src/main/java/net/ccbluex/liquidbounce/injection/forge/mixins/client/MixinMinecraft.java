@@ -6,6 +6,7 @@
 package net.ccbluex.liquidbounce.injection.forge.mixins.client;
 
 import com.guimc.fuckpcl.PCLChecker;
+import javafx.embed.swing.JFXPanel;
 import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.event.*;
 import net.ccbluex.liquidbounce.features.module.modules.client.Modules;
@@ -13,7 +14,9 @@ import net.ccbluex.liquidbounce.features.module.modules.client.Rotations;
 import net.ccbluex.liquidbounce.features.module.modules.combat.AutoClicker;
 import net.ccbluex.liquidbounce.features.module.modules.world.FastPlace;
 import net.ccbluex.liquidbounce.injection.access.StaticStorage;
-import net.ccbluex.liquidbounce.utils.*;
+import net.ccbluex.liquidbounce.utils.CPSCounter;
+import net.ccbluex.liquidbounce.utils.ClientUtils;
+import net.ccbluex.liquidbounce.utils.RotationUtils;
 import net.ccbluex.liquidbounce.utils.misc.MiscUtils;
 import net.ccbluex.liquidbounce.utils.render.ImageUtils;
 import net.ccbluex.liquidbounce.utils.render.RenderUtils;
@@ -24,6 +27,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.main.GameConfiguration;
 import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.particle.EffectRenderer;
@@ -46,6 +50,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -99,7 +104,6 @@ public abstract class MixinMinecraft {
     public int getLimitFramerate() {
         return this.gameSettings.limitFramerate;
     }
-
     @Inject(method = "startGame", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;checkGLError(Ljava/lang/String;)V", ordinal = 2, shift = At.Shift.AFTER))
     private void startGame(CallbackInfo callbackInfo) throws AccessDeniedException {
         if(PCLChecker.INSTANCE.fullCheck(this.mcDataDir)){
@@ -249,8 +253,12 @@ public abstract class MixinMinecraft {
             if(image.getWidth() != 32 || image.getHeight() != 32) {
                 image = ImageUtils.resizeImage(image, 32, 32);
             }
-            Display.setIcon(new ByteBuffer[]{ImageUtils.readImageToBuffer(ImageUtils.resizeImage(image, 16, 16)),
-                    ImageUtils.readImageToBuffer(image)});
+            try {
+                Display.setIcon(new ByteBuffer[]{ImageUtils.readImageToBuffer(ImageUtils.resizeImage(image, 16, 16)),
+                        ImageUtils.readImageToBuffer(image)});
+            }catch (Exception e){
+                e.printStackTrace();
+            }
             callbackInfo.cancel();
         }
     }
